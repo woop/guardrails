@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from lxml import etree as ET
+from pydantic import BaseModel
 
 from guardrails.prompt import Prompt
 from guardrails.schema import InputSchema, OutputSchema, Schema
@@ -139,9 +140,8 @@ class Rail:
 
         # Load <prompt />
         prompt = xml.find("prompt")
-        if prompt is None:
-            raise ValueError("RAIL file must contain a prompt element.")
-        prompt = cls.load_prompt(prompt, output_schema)
+        if prompt is not None:
+            prompt = cls.load_prompt(prompt, output_schema)
 
         return cls(
             input_schema=input_schema,

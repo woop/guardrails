@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple, Union
 
 from eliot import start_action, to_file
 
@@ -71,6 +71,11 @@ class Guard:
         """Return the state."""
         return self.guard_state
 
+    @property
+    def output_schema_str(self) -> str:
+        """Return the output format."""
+        return self.rail.output_schema.transpile()
+
     def configure(
         self,
         num_reasks: int = 1,
@@ -108,6 +113,7 @@ class Guard:
         self,
         llm_api: Callable,
         prompt_params: Dict = None,
+        prompt: Union[str, Prompt] = None,
         num_reasks: int = 1,
         *args,
         **kwargs,
@@ -125,8 +131,22 @@ class Guard:
             The raw text output from the LLM and the validated output.
         """
         with start_action(action_type="guard_call", prompt_params=prompt_params):
+            if prompt:
+                if isinstance(prompt, str):
+                    assert (
+                        "{output_schema}" in prompt
+                    ), "Prompt must contain {output_schema}"
+                    prompt = Prompt(prompt, output_schema=self.output_schema_str)
+
+                if prompt_params:
+                    # Make sure prompt_params exist in the prompt
+                    assert set(prompt_params.keys()) == set(prompt.variable_names), (
+                        f"Prompt parameters {prompt_params.keys()} do not match "
+                        f"prompt variables {prompt.variable_names}"
+                    )
+
             runner = Runner(
-                prompt=self.prompt,
+                prompt=prompt,
                 api=get_llm_ask(llm_api, *args, **kwargs),
                 input_schema=self.input_schema,
                 output_schema=self.output_schema,
