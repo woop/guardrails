@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from lxml import etree as ET
-from pydantic import BaseModel
 
 from guardrails.prompt import Prompt
 from guardrails.schema import InputSchema, OutputSchema, Schema
