@@ -354,8 +354,14 @@ def generate_xml_code(
     # Create the output element
     output = SubElement(root, "output")
 
-    # Create XML elements for the output_class
-    create_xml_elements_for_model(output, output_class, output_class.__name__)
+    # Create the wrapping object element
+    director_element = SubElement(output, "object")
+    director_element.set("name", output_class.__name__.lower())
+    director_element.set("pydantic", output_class.__name__)
+    director_element.set("on-fail-pydantic", "reask")
+
+    # Create XML elements for the output_class inside the director object element
+    create_xml_elements_for_model(director_element, output_class, output_class.__name__)
 
     # Create the prompt element
     prompt_element = SubElement(root, "prompt")

@@ -7,16 +7,15 @@ import pytest
 from pydantic import Field as PydanticField
 from pydantic import root_validator, validator
 
-import guardrails as gd
+from guardrails import Guard, Prompt
 from guardrails.datatypes import Field, GuardModel
 from guardrails.validators import (
     EventDetail,
     Validator,
     ValidChoices,
     ValidLength,
-    register_validator,
 )
-
+from guardrails.validators_registry import register_validator
 from .mock_llm_outputs import openai_chat_completion_create
 from .test_assets import python_rail
 
@@ -99,7 +98,7 @@ def test_python_rail(mocker):
         name: str = Field(gd_validators=[IsValidDirector()])
         movies: List[Movie]
 
-    guard = gd.Guard.from_pydantic(
+    guard = Guard.from_pydantic(
         output_class=Director,
         prompt=(
             "Provide detailed information about the top 5 grossing movies from"
@@ -131,14 +130,14 @@ def test_python_rail(mocker):
     # Check that the guard state object has the correct number of re-asks.
     assert len(guard_history) == 2
 
-    assert guard_history[0].prompt == gd.Prompt(
+    assert guard_history[0].prompt == Prompt(
         python_rail.COMPILED_PROMPT_1_WITHOUT_INSTRUCTIONS
     )
     assert (
         guard_history[0].output == python_rail.LLM_OUTPUT_1_FAIL_GUARDRAILS_VALIDATION
     )
 
-    assert guard_history[1].prompt == gd.Prompt(
+    assert guard_history[1].prompt == Prompt(
         python_rail.COMPILED_PROMPT_2_WITHOUT_INSTRUCTIONS
     )
     assert (
@@ -157,3 +156,8 @@ def test_python_rail(mocker):
 
     # The fixed output should pass validation using Pydantic
     Director.parse_raw(python_rail.LLM_OUTPUT_3_SUCCEED_GUARDRAILS_AND_PYDANTIC)
+
+    # The fixed output should pass validation using Pydantic
+
+    # TODO: We shouldn't have to select "director" here. The response object should just return the Director object.
+    Director(**final_output['director'])

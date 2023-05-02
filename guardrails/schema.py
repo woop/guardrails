@@ -12,6 +12,7 @@ from lxml.builder import E
 
 from guardrails.datatypes import DataType
 from guardrails.validators import Validator, check_refrain_in_dict, filter_in_dict
+from guardrails.validators_registry import types_to_validators
 
 if TYPE_CHECKING:
     pass
@@ -177,7 +178,7 @@ class FormatAttr:
         Returns:
             A list of validators.
         """
-        from guardrails.validators import types_to_validators, validators_registry
+        from guardrails.validators import validators_registry
 
         _validators = []
         _unregistered_validators = []

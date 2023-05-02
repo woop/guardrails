@@ -4,6 +4,7 @@ from typing import Callable, Dict, Optional, Tuple, Union
 
 from eliot import start_action, to_file
 
+from guardrails.validators_registry import register_validator
 from guardrails.llm_providers import PromptCallable, get_llm_ask
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
@@ -208,6 +209,7 @@ class Guard:
     @classmethod
     def from_pydantic(cls, output_class, prompt, instructions) -> "Guard":
         """Create a Guard instance from a Pydantic model and prompt."""
+        register_validator("pydantic", output_class)
         rail = Rail.from_pydantic(
             output_class=output_class, prompt=prompt, instructions=instructions
         )

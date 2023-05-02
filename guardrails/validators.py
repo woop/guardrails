@@ -15,7 +15,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 import openai
 from pydantic import BaseModel, ValidationError
 
-from guardrails.datatypes import registry as types_registry
+from guardrails.validators_registry import register_validator, validators_registry
 from guardrails.utils.docs_utils import sentence_split
 from guardrails.utils.reask_utils import ReAsk
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
@@ -28,8 +28,6 @@ else:
     _HAS_NUMPY = True
 
 
-validators_registry = {}
-types_to_validators = defaultdict(list)
 
 
 logger = logging.getLogger(__name__)
@@ -147,31 +145,6 @@ def filter_in_dict(schema: Dict) -> Dict:
             filtered_dict[key] = value
 
     return filtered_dict
-
-
-def register_validator(name: str, data_type: Union[str, List[str]]):
-    """Register a validator for a data type."""
-
-    def decorator(cls: type):
-        """Register a validator for a data type."""
-        nonlocal data_type
-        if isinstance(data_type, str):
-            data_type = (
-                list(types_registry.keys()) if data_type == "all" else [data_type]
-            )
-        # Make sure that the data type string exists in the data types registry.
-        for dt in data_type:
-            if dt not in types_registry:
-                raise ValueError(f"Data type {dt} is not registered.")
-
-            types_to_validators[dt].append(name)
-
-        validators_registry[name] = cls
-        cls.rail_alias = name
-        return cls
-
-    return decorator
-
 
 @dataclass
 class EventDetail(BaseException):

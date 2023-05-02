@@ -5,8 +5,8 @@ from guardrails.llm_providers import PromptCallable
 from guardrails.prompt import Instructions, Prompt
 from guardrails.rail import Rail
 from guardrails.utils import constants, docs_utils
-from guardrails.validators import Validator, register_validator
-
+from guardrails.validators import Validator
+from guardrails.validators_registry import register_validator
 __all__ = [
     "Guard",
     "PromptCallable",
