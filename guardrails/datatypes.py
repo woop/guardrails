@@ -298,12 +298,6 @@ class Object(NonScalarType):
     def validate(self, key: str, value: Any, schema: Dict) -> Dict:
         # Validators in the main object data type are applied to the object overall.
 
-        for validator in self.validators:
-            schema = validator.validate_with_correction(key, value, schema)
-
-        if len(self._children) == 0:
-            return schema
-
         # Types of supported children
         # 1. key_type
         # 2. value_type
@@ -317,10 +311,18 @@ class Object(NonScalarType):
             # child_key is an expected key that the schema defined
             # child_data_type is the data type of the expected key
             value = child_data_type.validate(
-                child_key, value.get(child_key, None), value
+                child_key,
+                value.get(child_key, None),
+                value,
             )
 
         schema[key] = value
+
+        for validator in self.validators:
+            schema = validator.validate_with_correction(key, value, schema)
+
+        # if len(self._children) == 0:
+        #     return schema
 
         return schema
 

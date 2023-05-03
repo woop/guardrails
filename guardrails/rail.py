@@ -357,7 +357,8 @@ def generate_xml_code(
     # Create the wrapping object element
     director_element = SubElement(output, "object")
     director_element.set("name", output_class.__name__.lower())
-    director_element.set("pydantic", output_class.__name__)
+    # director_element.set("pydantic", output_class.__name__)
+    director_element.set("format", f"pydantic: {output_class.__name__}")
     director_element.set("on-fail-pydantic", "reask")
 
     # Create XML elements for the output_class inside the director object element

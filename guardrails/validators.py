@@ -17,7 +17,7 @@ from pydantic import BaseModel, ValidationError
 
 from guardrails.validators_registry import register_validator, validators_registry
 from guardrails.utils.docs_utils import sentence_split
-from guardrails.utils.reask_utils import ReAsk
+from guardrails.utils.reask_utils import ReAsk, gather_reasks
 from guardrails.utils.sql_utils import SQLDriver, create_sql_driver
 
 try:
@@ -26,8 +26,6 @@ except ImportError:
     _HAS_NUMPY = False
 else:
     _HAS_NUMPY = True
-
-
 
 
 logger = logging.getLogger(__name__)
@@ -145,6 +143,7 @@ def filter_in_dict(schema: Dict) -> Dict:
             filtered_dict[key] = value
 
     return filtered_dict
+
 
 @dataclass
 class EventDetail(BaseException):
@@ -289,17 +288,21 @@ class PydanticReAsk(dict):
     pass
 
 
-@register_validator(name="pydantic", data_type="pydantic")
+@register_validator(name="pydantic", data_type=["pydantic", "object"])
 class Pydantic(Validator):
     """Validate an object using Pydantic."""
 
     def __init__(
         self,
-        model: Type[BaseModel],
+        model: Union[str, Type[BaseModel]],
         on_fail: Optional[Callable] = None,
     ):
         super().__init__(on_fail=on_fail)
 
+        if isinstance(model, str):
+            from guardrails.utils.pydantic_utils import pydantic_models
+
+            model = pydantic_models.get(model, None)
         self.model = model
 
     def validate_with_correction(
@@ -339,6 +342,16 @@ class Pydantic(Validator):
             }
         }
         """
+        # Recursively search for ReAsk objects in the schema.
+        # If found, don't run this Pydantic validator, just return the schema directly.
+        # Because: we know this validator is bound to fail, because some other validator
+        # that was run on a (key, value) pair inside `schema` has already failed.
+        if gather_reasks(schema):
+            logger.debug(
+                f"ReAsk found in schema, so skipping Pydantic validator for {key}..."
+            )
+            return schema
+
         try:
             # Run the Pydantic model on the value.
             schema[key] = self.model(**value)
@@ -347,10 +360,12 @@ class Pydantic(Validator):
             # to insert e.g. ReAsk objects.
             new_value = deepcopy(value)
             for error in e.errors():
-                assert (
-                    len(error["loc"]) == 1
-                ), "Pydantic validation errors should only have one location."
+                # assert (
+                #     len(error["loc"]) == 1
+                # ), f"Pydantic validation errors should only have one location. {error}"
 
+                # TODO: if len(error['loc']) > 1, then should we be grabbing the specific
+                # field_name that is point to by error['loc'] (instead of the outermost field)
                 field_name = error["loc"][0]
                 event_detail = EventDetail(
                     key=field_name,
