@@ -4,7 +4,7 @@ Provide detailed information about the top 5 grossing movies from Christopher No
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 <output>
-    <object name="director" pydantic="Director">
+    <object name="director" format="pydantic">
         <string name="name" format="is-valid-director"/>
         <list name="movies">
             <object>

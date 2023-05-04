@@ -130,10 +130,11 @@ def get_pruned_tree(
                 parent = grandparent
 
     pruned_elements = root.findall(".//*")
+    a = str(pruned_elements)
     for element in pruned_elements:
         if element not in reask_elements:
             # Remove the format attribute
-            if "format" in element.attrib:
+            if "format" in element.attrib and 'pydantic' not in element.attrib["format"]:
                 del element.attrib["format"]
 
     return root
